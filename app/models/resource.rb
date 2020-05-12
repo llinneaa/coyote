@@ -50,6 +50,7 @@ class Resource < ApplicationRecord
   belongs_to :organization, inverse_of: :resources
 
   has_many :representations, inverse_of: :resource
+  accepts_nested_attributes_for :representations
   has_many :approved_representations, -> { approved }, class_name: :Representation, inverse_of: :resource
   has_many :subject_resource_links, foreign_key: :subject_resource_id, class_name: :ResourceLink, inverse_of: :subject_resource
   has_many :object_resource_links, foreign_key: :object_resource_id, class_name: :ResourceLink, inverse_of: :object_resource
@@ -163,6 +164,19 @@ class Resource < ApplicationRecord
     result
   end
 
+  def representations_attributes=(representations_attributes)
+    return unless new_record?
+    cleaned_attributes = representations_attributes.with_indifferent_access.map { |index, attributes|
+      attributes[:author_id] ||= organization.memberships.active.by_creation.first_id(:user_id)
+      attributes[:endpoint_id] ||= extract_string_value_for_relationship_name(:endpoint, "Any", attributes)
+      attributes[:license_id] ||= extract_string_value_for_relationship_name(:license, "cc0-1.0", attributes)
+      attributes[:metum_id] ||= extract_string_value_for_relationship_name(:metum, "Short", attributes)
+      [index, attributes]
+    }
+
+    super Hash[*cleaned_attributes.flatten]
+  end
+
   def represented?
     !unrepresented?
   end
@@ -231,5 +245,18 @@ class Resource < ApplicationRecord
 
   def set_default_resource_group
     resource_groups << organization.resource_groups.default.first unless resource_groups.any?
+  end
+
+  private
+
+  def extract_string_value_for_relationship_name(key, default, attributes)
+    return if attributes.key?("#{key}_id")
+
+    name = attributes.delete(key) { default }
+    model = key.to_s.classify.safe_constantize
+    return nil if model.blank?
+
+    finder = model.column_names.include?("name") ? "name" : "title"
+    model.where(finder => name).first_id || model.by_creation.first_id
   end
 end

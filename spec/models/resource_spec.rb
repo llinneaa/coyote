@@ -144,5 +144,72 @@ RSpec.describe Resource do
       }).to have_been_made
     end
   end
+
+  describe "receiving representations in attributes", clean_db: true do
+    let(:organization) { create(:organization) }
+    let!(:user) { create(:membership, organization: organization).user }
+    let!(:user_2) { create(:membership, organization: organization).user }
+
+    let!(:endpoint) { Endpoint.find_or_create_by!(name: "Any") }
+    let!(:endpoint_2) { create(:endpoint, :website) }
+
+    let!(:license) { create(:license, :universal) }
+    let!(:license_2) { create(:license, :attribution_international) }
+
+    let!(:metum) { create(:metum, :short) }
+    let!(:metum_2) { create(:metum, :long) }
+
+    let(:representation_attributes) { attributes_for(:representation) }
+
+    describe "on new records" do
+      let(:resource) {
+        create(:resource,
+          organization:               organization,
+          representations_attributes: {0 => representation_attributes})
+      }
+      let(:representation) { resource.representations.first }
+
+      it "creates representations for the resource" do
+        expect(resource).to be_persisted
+        expect(representation.attributes.symbolize_keys).to include(representation_attributes)
+      end
+
+      it "automatically assigns the first active organization user" do
+        expect(representation.author).to eq(user)
+      end
+
+      it "accepts an author" do
+        representation_attributes[:author_id] = user_2.id
+        expect(representation.author).to eq(user_2)
+      end
+
+      it "automatically assigns the universal license" do
+        expect(representation.license).to eq(license)
+      end
+
+      it "accepts a license" do
+        representation_attributes[:license] = license_2.name
+        expect(representation.license).to eq(license_2)
+      end
+
+      it "automatically assigns the 'any' endpoint" do
+        expect(representation.endpoint).to eq(endpoint)
+      end
+
+      it "accepts an endpoint" do
+        representation_attributes[:endpoint] = endpoint_2.name
+        expect(representation.endpoint).to eq(endpoint_2)
+      end
+
+      it "automatically assigns the 'Short' metum" do
+        expect(representation.metum).to eq(metum)
+      end
+
+      it "accepts a metum" do
+        representation_attributes[:metum] = metum_2.title
+        expect(representation.metum).to eq(metum_2)
+      end
+    end
+  end
 end
 # rubocop:enable RSpec/MultipleExpectations

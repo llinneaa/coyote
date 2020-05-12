@@ -4,7 +4,13 @@
 class ApplicationRecord < ActiveRecord::Base
   self.abstract_class = true
 
-  scope :by_id, -> { order(:id) }
+  scope :by_created_at, -> { order(created_at: :asc) }
+  scope :by_id, -> { order(id: :asc) }
+  scope :by_creation, -> { by_created_at.by_id }
+
+  def self.first_id(column = :id)
+    limit(1).pluck(column).first
+  end
 
   # @return [String] a complete human-readable list of any errors on this object, in sentence form
   def error_sentence

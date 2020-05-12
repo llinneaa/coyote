@@ -42,10 +42,6 @@ FactoryBot.define do
       priority_flag { true }
     end
 
-    transient do
-      organization { nil }
-    end
-
     after(:build) do |resource, evaluator|
       resource.organization ||= evaluator.organization || build(:organization)
       resource.resource_groups ||= evaluator.resource_groups || [resource.organization.resource_groups.first] || [build(:resource_group, organization: resource.organization)]
