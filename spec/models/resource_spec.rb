@@ -111,10 +111,11 @@ RSpec.describe Resource do
       resource.save!
       expect(resource.identifier).to eq("this-is-a-test-isn-t-it-yes")
 
-      expect(SecureRandom).to receive(:hex).with(3).and_return("abcdef")
+      allow(SecureRandom).to receive(:hex).with(3).and_return("abcdef")
 
       resource_2 = create(:resource, identifier: "", title: "This is a test, isn't it?! YES!")
       expect(resource_2.identifier).to eq("this-is-a-test-isn-t-it-yes-abcdef")
+      expect(SecureRandom).to have_received(:hex).with(3)
     end
 
     it "sets a unique canonical id" do
