@@ -256,6 +256,6 @@ class Resource < ApplicationRecord
     return nil if model.blank?
 
     finder = model.column_names.include?("name") ? "name" : "title"
-    model.where(finder => name).first_id || model.by_creation.first_id
+    model.where(finder => name).first_id
   end
 end

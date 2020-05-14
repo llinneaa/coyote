@@ -175,7 +175,7 @@ RSpec.describe Resource do
         expect(representation.author).to eq(user)
       end
 
-      it "accepts an author" do
+      it "accepts an author_id" do
         representation_attributes[:author_id] = user_2.id
         expect(representation.author).to eq(user_2)
       end
@@ -184,8 +184,13 @@ RSpec.describe Resource do
         expect(representation.license).to eq(license)
       end
 
-      it "accepts a license" do
+      it "accepts a license by name" do
         representation_attributes[:license] = license_2.name
+        expect(representation.license).to eq(license_2)
+      end
+
+      it "accepts a license by ID" do
+        representation_attributes[:license_id] = license_2.id
         expect(representation.license).to eq(license_2)
       end
 
@@ -193,8 +198,13 @@ RSpec.describe Resource do
         expect(representation.metum).to eq(metum)
       end
 
-      it "accepts a metum" do
+      it "accepts a metum by name" do
         representation_attributes[:metum] = metum_2.title
+        expect(representation.metum).to eq(metum_2)
+      end
+
+      it "accepts a metum by ID" do
+        representation_attributes[:metum_id] = metum_2.id
         expect(representation.metum).to eq(metum_2)
       end
     end
