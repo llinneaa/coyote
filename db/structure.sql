@@ -75,12 +75,12 @@ CREATE TYPE public.resource_type AS ENUM (
 CREATE FUNCTION public.reset_sequence(tablename text, columnname text, sequence_name text) RETURNS void
     LANGUAGE plpgsql
     AS $$
-        DECLARE
-        BEGIN
-        EXECUTE 'SELECT setval( ''' || sequence_name  || ''', ' || '(SELECT MAX(' || columnname || ') FROM ' || tablename || ')' || '+1)';
-        END;
+      DECLARE
+      BEGIN
+      EXECUTE 'SELECT setval( ''' || sequence_name  || ''', ' || '(SELECT MAX(' || columnname || ') FROM ' || tablename || ')' || '+1)';
+      END;
 
-      $$;
+    $$;
 
 
 SET default_tablespace = '';
@@ -276,37 +276,6 @@ CREATE SEQUENCE public.descriptions_id_seq
 --
 
 ALTER SEQUENCE public.descriptions_id_seq OWNED BY public.descriptions.id;
-
-
---
--- Name: endpoints; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.endpoints (
-    id bigint NOT NULL,
-    name character varying NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: endpoints_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.endpoints_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: endpoints_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.endpoints_id_seq OWNED BY public.endpoints.id;
 
 
 --
@@ -536,7 +505,6 @@ CREATE TABLE public.representations (
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     notes text,
-    endpoint_id bigint NOT NULL,
     ordinality integer
 );
 
@@ -1191,13 +1159,6 @@ ALTER TABLE ONLY public.descriptions ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: endpoints id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.endpoints ALTER COLUMN id SET DEFAULT nextval('public.endpoints_id_seq'::regclass);
-
-
---
 -- Name: images id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1411,14 +1372,6 @@ ALTER TABLE ONLY public.audits
 
 ALTER TABLE ONLY public.descriptions
     ADD CONSTRAINT descriptions_pkey PRIMARY KEY (id);
-
-
---
--- Name: endpoints endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.endpoints
-    ADD CONSTRAINT endpoints_pkey PRIMARY KEY (id);
 
 
 --
@@ -1698,13 +1651,6 @@ CREATE INDEX index_descriptions_on_user_id ON public.descriptions USING btree (u
 
 
 --
--- Name: index_endpoints_on_name; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_endpoints_on_name ON public.endpoints USING btree (name);
-
-
---
 -- Name: index_images_on_context_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1779,13 +1725,6 @@ CREATE UNIQUE INDEX index_organizations_on_title ON public.organizations USING b
 --
 
 CREATE INDEX index_representations_on_author_id ON public.representations USING btree (author_id);
-
-
---
--- Name: index_representations_on_endpoint_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_representations_on_endpoint_id ON public.representations USING btree (endpoint_id);
 
 
 --
@@ -2209,14 +2148,6 @@ ALTER TABLE ONLY public.descriptions
 
 
 --
--- Name: representations fk_rails_e007b1bcf9; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.representations
-    ADD CONSTRAINT fk_rails_e007b1bcf9 FOREIGN KEY (endpoint_id) REFERENCES public.endpoints(id) ON DELETE CASCADE;
-
-
---
 -- Name: resource_links fk_rails_e34756464a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2335,6 +2266,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20200429211742'),
 ('20200429212438'),
 ('20200429224758'),
-('20200501205106');
+('20200501205106'),
+('20200514191454');
 
 

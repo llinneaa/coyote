@@ -168,7 +168,6 @@ class Resource < ApplicationRecord
     return unless new_record?
     cleaned_attributes = representations_attributes.with_indifferent_access.map { |index, attributes|
       attributes[:author_id] ||= organization.memberships.active.by_creation.first_id(:user_id)
-      attributes[:endpoint_id] ||= extract_string_value_for_relationship_name(:endpoint, "Any", attributes)
       attributes[:license_id] ||= extract_string_value_for_relationship_name(:license, "cc0-1.0", attributes)
       attributes[:metum_id] ||= extract_string_value_for_relationship_name(:metum, "Short", attributes)
       [index, attributes]

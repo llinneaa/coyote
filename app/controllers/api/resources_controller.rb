@@ -6,7 +6,7 @@ module Api
     include PermittedParameters
 
     before_action :find_resource, only: %i[show update]
-    before_action :authorize_general_access, only: %i[index create]
+    before_action :authorize_general_access, only: %i[index create create_many]
     before_action :authorize_unit_access, only: %i[show update]
 
     resource_description do
@@ -154,6 +154,20 @@ module Api
         logger.warn "Unable to create resource due to '#{resource.error_sentence}'"
         render jsonapi_errors: resource.errors, status: :unprocessable_entity
       end
+    end
+
+    api :POST, "resources/create_many", "Bulk 'upsert' resources by source_uri"
+    def create_many
+      resources = many_resource_params.map { |resource_params|
+        resource = current_organization.resources.find_or_initialize_by(source_uri: resource_params[:source_uri])
+        if resource.update(resource_params)
+          logger.info "#{resource.previous_changes.key?(:id) ? "Created" : "Updated"} #{resource}"
+        else
+          logger.warn "Unable to #{resource.persisted? ? "update" : "create"} resource due to '#{resource.error_sentence}'"
+        end
+        resource
+      }
+      binding.pry
     end
 
     api :GET, "resources/:id", "Return attributes of a particular resource"

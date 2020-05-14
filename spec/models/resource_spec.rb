@@ -150,9 +150,6 @@ RSpec.describe Resource do
     let!(:user) { create(:membership, organization: organization).user }
     let!(:user_2) { create(:membership, organization: organization).user }
 
-    let!(:endpoint) { Endpoint.find_or_create_by!(name: "Any") }
-    let!(:endpoint_2) { create(:endpoint, :website) }
-
     let!(:license) { create(:license, :universal) }
     let!(:license_2) { create(:license, :attribution_international) }
 
@@ -190,15 +187,6 @@ RSpec.describe Resource do
       it "accepts a license" do
         representation_attributes[:license] = license_2.name
         expect(representation.license).to eq(license_2)
-      end
-
-      it "automatically assigns the 'any' endpoint" do
-        expect(representation.endpoint).to eq(endpoint)
-      end
-
-      it "accepts an endpoint" do
-        representation_attributes[:endpoint] = endpoint_2.name
-        expect(representation.endpoint).to eq(endpoint_2)
       end
 
       it "automatically assigns the 'Short' metum" do

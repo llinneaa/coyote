@@ -9,7 +9,6 @@ RSpec.describe "Representation adding and changing" do
 
   let!(:metum) { create(:metum, :long, organization: user_organization) }
   let!(:license) { create(:license) }
-  let!(:endpoint) { create(:endpoint) }
 
   it "succeeds" do
     visit resource_url(resource)
