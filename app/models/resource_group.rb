@@ -62,7 +62,7 @@ class ResourceGroup < ApplicationRecord
   end
 
   def webhook_uri_is_valid?
-    return true if URI.regexp(%w[http https]).match?(webhook_uri) && URI.parse(webhook_uri).host.present?
+    return true if URI::DEFAULT_PARSER.make_regexp(%w[http https]).match?(webhook_uri) && URI.parse(webhook_uri).host.present?
     raise URI::InvalidURIError
   rescue URI::InvalidURIError
     errors.add(:webhook_uri, "is not a valid URL")

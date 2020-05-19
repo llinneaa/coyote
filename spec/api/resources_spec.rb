@@ -90,6 +90,97 @@ RSpec.describe "Accessing resources" do
           resource_group,
         ])
     end
+
+    describe "creating many resources" do
+      let!(:license) { create(:license, :universal) }
+      let!(:short) { create(:metum, :short) }
+      let!(:long) { create(:metum, :long) }
+
+      let(:representation_attributes) { attributes_for(:representation) }
+
+      let!(:existing_resource) { create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url) }
+      let!(:existing_nested_resource) {
+        create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url).tap do |resource|
+          create(:representation, representation_attributes.merge(metum: long, resource: resource))
+        end
+      }
+
+      let(:new_resource_params) do
+        attributes_for(:resource, resource_group_id: resource_group.id, source_uri: Faker::Internet.unique.url)
+      end
+
+      let(:new_nested_resource_params) {
+        attributes_for(:resource, representations: [
+          attributes_for(:representation).merge(metum: long.title),
+        ], resource_group_id: resource_group.id, source_uri: Faker::Internet.unique.url)
+      }
+
+      let(:existing_resource_params) {
+        existing_resource.attributes.slice("source_uri").merge(
+          representations: [representation_attributes],
+        )
+      }
+
+      let(:existing_nested_resource_params) {
+        existing_nested_resource.attributes.slice("source_uri").merge(
+          representations: [representation_attributes.merge(metum: short.title)],
+        )
+      }
+
+      it "POST /organizations/:id/resources/create creates new resources by source_uri, and appends representations" do
+        expect {
+          post create_many_api_resources_path(user_organization.id), params: {resources: [
+            new_resource_params,
+            new_nested_resource_params,
+            existing_resource_params,
+            existing_nested_resource_params,
+          ]}, headers: auth_headers
+          expect(response).to be_created
+        }.to change(user_organization.resources, :count)
+          .from(2).to(4)
+
+        # It should add a new representation to the resource that had none
+        representation = existing_resource.representations.first
+        expect(representation.metum).to eq(short)
+        expect(representation.license).to eq(license)
+        expect(representation.text).to eq(representation_attributes[:text])
+
+        # It should prevent creation of a duplicate representation on the resource that already had one, and
+        expect(existing_nested_resource.representations.count).to eq(1)
+
+        # It should also not modify the existing representation since it was a duplicate
+        representation = existing_nested_resource.representations.first
+        expect(representation.metum).to eq(long) # It should not have updated the metum to short
+      end
+
+      fit "POST /organizations/:id/resources/create returns a mix of errors and success when some things fail" do
+        params = {resources: [
+          new_resource_params.except(:source_uri, :title, :identifier),
+          existing_resource_params,
+        ]}
+
+        expect {
+          post create_many_api_resources_path(user_organization.id), params: params, as: :json, headers: auth_headers
+          expect(response).to be_created
+        }.not_to change(user_organization.resources, :count)
+          .from(2)
+
+        pp json_data
+        # binding.pry
+        # It should add a new representation to the resource that had none
+        # representation = existing_resource.representations.first
+        # expect(representation.metum).to eq(short)
+        # expect(representation.license).to eq(license)
+        # expect(representation.text).to eq(representation_attributes[:text])
+
+        # # It should prevent creation of a duplicate representation on the resource that already had one, and
+        # expect(existing_nested_resource.representations.count).to eq(1)
+
+        # # It should also not modify the existing representation since it was a duplicate
+        # representation = existing_nested_resource.representations.first
+        # expect(representation.metum).to eq(long) # It should not have updated the metum to short
+      end
+    end
   end
 
   describe "with multiple resources" do

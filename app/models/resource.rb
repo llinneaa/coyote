@@ -165,15 +165,17 @@ class Resource < ApplicationRecord
   end
 
   def representations_attributes=(representations_attributes)
-    return unless new_record?
-    cleaned_attributes = representations_attributes.with_indifferent_access.map { |index, attributes|
-      attributes[:author_id] ||= organization.memberships.active.by_creation.first_id(:user_id)
-      attributes[:license_id] ||= extract_string_value_for_relationship_name(:license, "cc0-1.0", attributes)
-      attributes[:metum_id] ||= extract_string_value_for_relationship_name(:metum, "Short", attributes)
-      [index, attributes]
+    cleaned_attributes = representations_attributes.with_indifferent_access.each_with_object({}) { |(index, attributes), all_attributes|
+      has_represenatation = persisted? && representations.where(attributes.except(:author_id, :license, :license_id, :metum, :metum_id)).any?
+      unless has_represenatation
+        attributes[:author_id] ||= organization.memberships.active.by_creation.first_id(:user_id)
+        attributes[:license_id] ||= extract_string_value_for_relationship_name(:license, "cc0-1.0", attributes)
+        attributes[:metum_id] ||= extract_string_value_for_relationship_name(:metum, "Short", attributes)
+        all_attributes[index] = attributes
+      end
     }
 
-    super Hash[*cleaned_attributes.flatten]
+    super cleaned_attributes unless representations_attributes.size > 0 && cleaned_attributes.size.zero?
   end
 
   def represented?
@@ -242,12 +244,6 @@ class Resource < ApplicationRecord
 
   private
 
-  def set_default_resource_group
-    resource_groups << organization.resource_groups.default.first unless resource_groups.any?
-  end
-
-  private
-
   def extract_string_value_for_relationship_name(key, default, attributes)
     return if attributes.key?("#{key}_id")
 
@@ -257,5 +253,9 @@ class Resource < ApplicationRecord
 
     finder = model.column_names.include?("name") ? "name" : "title"
     model.where(finder => name).first_id
+  end
+
+  def set_default_resource_group
+    resource_groups << organization.resource_groups.default.first unless resource_groups.any?
   end
 end

@@ -131,7 +131,7 @@ Rails.application.routes.draw do
       scope "organizations/:organization_id" do
         resources :resources, only: %i[index create] do
           collection do
-            post :create_many
+            post "create", as: :create_many, to: "resources#create_many"
             post :get, to: "resources#index"
           end
         end

@@ -29,6 +29,19 @@ module Api
         param :canonical_id, String, "Unique identifier assigned by the organization that owns this resource", required: false
         param :source_uri, String, "The canonical location of the resource", required: false
         param :resource_group_id, Integer, "Identifies the resource group to which this resource belongs. If omitted, will be set to the default resource group for this organization.", required: false
+        param :represenatations, Array, "An array of representations you'd like attached to this resource. See the `representations` params for more info."
+      end
+    end
+
+    def_param_group :representations do
+      params :representations, Hash, action_aware: true do
+        param :text, String, "The text of the representation", required: true
+        param :language, String, "The language code for this representation", required: true
+        param :author_id, Integer, "The user who authored this representation's ID - defaults to the user making the API request", required: false
+        param :license, String, "The name of the license which applies to this represenation", reuired: false
+        param :license_id, Integer, "The ID of the license which applies to this represenation", reuired: false
+        param :meta, String, "The name of the metum which this represenation uses", reuired: false
+        param :meta_id, Integer, "The ID of the metum which this represenation uses", reuired: false
       end
     end
 
@@ -158,16 +171,28 @@ module Api
 
     api :POST, "resources/create_many", "Bulk 'upsert' resources by source_uri"
     def create_many
-      resources = many_resource_params.map { |resource_params|
-        resource = current_organization.resources.find_or_initialize_by(source_uri: resource_params[:source_uri])
-        if resource.update(resource_params)
-          logger.info "#{resource.previous_changes.key?(:id) ? "Created" : "Updated"} #{resource}"
+      resources = params.require(:resources).map { |resource_params|
+        resource_params = clean_resource_params(resource_params)
+        resource = if resource_params[:source_uri].present?
+          current_organization.resources.find_or_initialize_by(source_uri: resource_params[:source_uri])
+        elsif resource_params[:identifier].present?
+          current_organization.resources.find_or_initialize_by(identifier: resource_params[:identifier])
         else
-          logger.warn "Unable to #{resource.persisted? ? "update" : "create"} resource due to '#{resource.error_sentence}'"
+          current_organization.resources.build
         end
+        resource.update(resource_params)
+        pp resource_params.to_unsafe_hash
+        binding.pry
         resource
       }
+
+      valid_resources = resources.select(&:valid?)
+      pp params.to_unsafe_hash
       binding.pry
+      invalid_resources = resources - valid_resources
+      render jsonapi:        valid_resources,
+             jsonapi_errors: invalid_resources.map(&:errors),
+             status:         invalid_resources.size == resources.size ? :unprocessable_entity : :created
     end
 
     api :GET, "resources/:id", "Return attributes of a particular resource"
@@ -296,13 +321,14 @@ module Api
     end
 
     def filter_params
-      filter = params.fetch(:filter, {})
-      default_params = %w[identifier_or_title_or_representations_text_cont_all representations_updated_at_gt updated_at_gt source_uri_eq_any]
-      if filter[:scope].is_a?(Array)
-        filter.permit(*default_params, scope: [])
-      else
-        filter.permit(*default_params, :scope)
-      end
+      params.fetch(:filter, {}).permit(
+        :identifier_or_title_or_representations_text_cont_all,
+        :representations_updated_at_gt,
+        :updated_at_gt,
+        :source_uri_eq_any,
+        :scope,
+        scope: [],
+      )
     end
 
     def record_filter
