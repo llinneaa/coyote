@@ -24,7 +24,6 @@ module PermittedParameters
       host_uris
       identifier
       name
-      ordinality
       priority_flag
       resource_group_id
       resource_group_ids

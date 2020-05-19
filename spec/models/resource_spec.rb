@@ -8,7 +8,6 @@
 #  host_uris             :string           default([]), not null, is an Array
 #  identifier            :string           not null
 #  name                  :string           default("(no title provided)"), not null
-#  ordinality            :integer
 #  priority_flag         :boolean          default(FALSE), not null
 #  representations_count :integer          default(0), not null
 #  resource_type         :enum             not null

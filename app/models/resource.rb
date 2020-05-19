@@ -8,7 +8,6 @@
 #  host_uris             :string           default([]), not null, is an Array
 #  identifier            :string           not null
 #  name                  :string           default("(no title provided)"), not null
-#  ordinality            :integer
 #  priority_flag         :boolean          default(FALSE), not null
 #  representations_count :integer          default(0), not null
 #  resource_type         :enum             not null
@@ -121,7 +120,7 @@ class Resource < ApplicationRecord
   end
 
   def content_changed?
-    (previous_changes.keys & %w[identifier name resource_type canonical_id source_uri priority_flag host_uris ordinality]).any?
+    (previous_changes.keys & %w[identifier name resource_type canonical_id source_uri priority_flag host_uris]).any?
   end
 
   def generate_canonical_id
