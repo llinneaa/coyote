@@ -7,12 +7,12 @@
 #  id                    :bigint           not null, primary key
 #  host_uris             :string           default([]), not null, is an Array
 #  identifier            :string           not null
+#  name                  :string           default("(no title provided)"), not null
 #  ordinality            :integer
 #  priority_flag         :boolean          default(FALSE), not null
 #  representations_count :integer          default(0), not null
 #  resource_type         :enum             not null
 #  source_uri            :citext
-#  title                 :string           default("(no title provided)"), not null
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
 #  canonical_id          :string           not null
@@ -39,7 +39,7 @@
 # @see http://dublincore.org/documents/dc-xml-guidelines/
 # @see Coyote::Resource::TYPES
 class Resource < ApplicationRecord
-  DEFAULT_TITLE = "(no title provided)"
+  DEFAULT_NAME = "(no title provided)"
 
   before_create :set_default_resource_group
   before_save :set_canonical_id
@@ -79,7 +79,7 @@ class Resource < ApplicationRecord
   validates :resource_type, presence: true
   validates :canonical_id, uniqueness: {scope: :organization_id}
   validates :source_uri, uniqueness: {scope: :organization_id}, if: :source_uri?
-  validates :title, presence: true
+  validates :name, presence: true
 
   enum resource_type: Coyote::Resource::TYPES
 
@@ -88,7 +88,7 @@ class Resource < ApplicationRecord
   paginates_per Rails.configuration.x.resource_api_page_size # see https://github.com/kaminari/kaminari#configuring-max-per_page-value-for-each-model-by-max_paginates_per
   # max_paginates_per Rails.configuration.x.resource_api_page_size # see https://github.com/kaminari/kaminari#configuring-max-per_page-value-for-each-model-by-max_paginates_per
 
-  delegate :title, to: :resource_group, prefix: true
+  delegate :name, to: :resource_group, prefix: true
 
   # @return [ActiveSupport::TimeWithZone] if one more resources exist, this is the created_at time for the most recently-created resource
   # @return [nil] if no resources exist
@@ -112,7 +112,7 @@ class Resource < ApplicationRecord
 
   def best_representation
     return @best_representation if defined? @best_representation
-    @best_representation = representations.by_status.by_title_length.first
+    @best_representation = representations.by_status.by_length.first
   end
 
   def complete?
@@ -121,7 +121,7 @@ class Resource < ApplicationRecord
   end
 
   def content_changed?
-    (previous_changes.keys & %w[identifier title resource_type canonical_id source_uri priority_flag host_uris ordinality]).any?
+    (previous_changes.keys & %w[identifier name resource_type canonical_id source_uri priority_flag host_uris ordinality]).any?
   end
 
   def generate_canonical_id
@@ -133,9 +133,9 @@ class Resource < ApplicationRecord
     self[:host_uris] = value.to_s.split(/[\r\n]+/)
   end
 
-  # @return [String] a human-friendly means of identifying this resource in titles and select boxes
+  # @return [String] a human-friendly means of identifying this resource in names and select boxes
   def label
-    "#{title} (#{identifier})"
+    "#{name} (#{identifier})"
   end
 
   def notify_webhook!
@@ -206,7 +206,7 @@ class Resource < ApplicationRecord
 
   def set_identifier
     return if identifier.present?
-    root_identifier = title.parameterize
+    root_identifier = name.parameterize
     identifier = root_identifier
     scope = persisted? ? Resource.where.not(id: id) : Resource
     while scope.where(identifier: identifier).any?
@@ -251,8 +251,7 @@ class Resource < ApplicationRecord
     model = key.to_s.classify.safe_constantize
     return nil if model.blank?
 
-    finder = model.column_names.include?("name") ? "name" : "title"
-    model.where(finder => name).first_id
+    model.where(name: name).first_id
   end
 
   def set_default_resource_group

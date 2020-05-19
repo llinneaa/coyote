@@ -49,16 +49,16 @@ class Representation < ApplicationRecord
   validates :language, presence: true
   validate :must_have_text_or_content_uri
 
-  delegate :title, :source_uri, to: :resource, prefix: true
-  delegate :title, to: :metum, prefix: true
-  delegate :title, to: :license, prefix: true
+  delegate :name, :source_uri, to: :resource, prefix: true
+  delegate :name, to: :metum, prefix: true
+  delegate :description, :name, to: :license, prefix: true
   delegate :name, to: :author, prefix: true
   delegate :identifier, to: :resource, prefix: true
 
   scope :by_ordinality, -> { order(ordinality: :asc) }
   scope :by_status, ->(descending: false) { order(Arel.sql("(case status when 'approved' then 0 when 'ready_to_review' then 1 else 2 end) #{descending ? "DESC" : "ASC"}")) }
-  scope :by_title_length, -> { order(Arel.sql("length(text) DESC")) }
-  scope :with_metum_named, ->(title) { joins(:metum).where(meta: {title: title}) }
+  scope :by_length, -> { order(Arel.sql("length(text) DESC")) }
+  scope :with_metum_named, ->(name) { joins(:metum).where(meta: {name: name}) }
 
   audited
 

@@ -24,7 +24,7 @@ module Api
     def_param_group :resource do
       param :resource, Hash, action_aware: true do
         param :identifier, String, "Unique human-readable identifier (slug) for this resource", required: false
-        param :title, String, "Caption that helps humans identify the resource", required: true
+        param :name, String, "Caption that helps humans identify the resource", required: true
         param :resource_type, Coyote::Resource::TYPES.values, "Dublin Core Metadata type for this resource", required: true
         param :canonical_id, String, "Unique identifier assigned by the organization that owns this resource", required: false
         param :source_uri, String, "The canonical location of the resource", required: false
@@ -48,7 +48,7 @@ module Api
     api :GET, "resources", "Return a list of resources available to the authenticated user"
     param_group :pagination, Api::ApplicationController
     param :filter, Hash do
-      param :identifier_or_title_or_representations_text_cont_all, String, "Search Resource identifier, title, or associated Representation text for this value"
+      param :identifier_or_name_or_representations_text_cont_all, String, "Search Resource identifier, name, or associated Representation text for this value"
       param :representations_updated_at_gt, Date, "Filter returned resources to those with representations having an `updated_at` value after the given date"
       param :updated_at_gt, Date, "Filter returned resources to those whose `updated_at` value is after the given date"
       param :scope, Resource.ransackable_scopes.to_a, "Limit search to Resources in these states"
@@ -61,7 +61,7 @@ module Api
           "id": "t.y.f.f.s.h.,_2011_929d",
           "type": "resource",
           "attributes": {
-            "title": "T.Y.F.F.S.H., 2011",
+            "name": "T.Y.F.F.S.H., 2011",
             "resource_type": "still_image",
             "canonical_id": "c4ca4238a0b923820dcc509a6f75849b",
             "source_uri": "https://coyote.pics/wp-content/uploads/2016/02/Screen-Shot-2016-02-29-at-10.05.14-AM-1024x683.png",
@@ -90,7 +90,7 @@ module Api
           "id": "mona_lisa_48f9",
           "type": "resource",
           "attributes": {
-            "title": "Mona Lisa",
+            "name": "Mona Lisa",
             "resource_type": "still_image",
             "canonical_id": "c81e728d9d4c2f636f067f89cc14862c",
             "source_uri": "http://example.com/image123.png",
@@ -116,7 +116,7 @@ module Api
           "id": "1",
           "type": "organization",
           "attributes": {
-            "title": "Acme Museum"
+            "name": "Acme Museum"
           }
         },
         {
@@ -181,14 +181,10 @@ module Api
           current_organization.resources.build
         end
         resource.update(resource_params)
-        pp resource_params.to_unsafe_hash
-        binding.pry
         resource
       }
 
       valid_resources = resources.select(&:valid?)
-      pp params.to_unsafe_hash
-      binding.pry
       invalid_resources = resources - valid_resources
       render jsonapi:        valid_resources,
              jsonapi_errors: invalid_resources.map(&:errors),
@@ -204,7 +200,7 @@ module Api
           "type": "resource",
           "attributes": {
             "id": "t.y.f.f.s.h.,_2011_929d",
-            "title": "T.Y.F.F.S.H., 2011",
+            "name": "T.Y.F.F.S.H., 2011",
             "resource_type": "still_image",
             "canonical_id": "c4ca4238a0b923820dcc509a6f75849b",
             "source_uri": "https://coyote.pics/wp-content/uploads/2016/02/Screen-Shot-2016-02-29-at-10.05.14-AM-1024x683.png",
@@ -234,7 +230,7 @@ module Api
             "id": "1",
             "type": "organization",
             "attributes": {
-              "title": "Acme Museum"
+              "name": "Acme Museum"
             }
           },
           {
@@ -322,7 +318,7 @@ module Api
 
     def filter_params
       params.fetch(:filter, {}).permit(
-        :identifier_or_title_or_representations_text_cont_all,
+        :identifier_or_name_or_representations_text_cont_all,
         :representations_updated_at_gt,
         :updated_at_gt,
         :source_uri_eq_any,

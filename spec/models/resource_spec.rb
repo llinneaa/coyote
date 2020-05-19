@@ -7,12 +7,12 @@
 #  id                    :bigint           not null, primary key
 #  host_uris             :string           default([]), not null, is an Array
 #  identifier            :string           not null
+#  name                  :string           default("(no title provided)"), not null
 #  ordinality            :integer
 #  priority_flag         :boolean          default(FALSE), not null
 #  representations_count :integer          default(0), not null
 #  resource_type         :enum             not null
 #  source_uri            :citext
-#  title                 :string           default("(no title provided)"), not null
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
 #  canonical_id          :string           not null
@@ -38,7 +38,7 @@ require "webmock/rspec"
 RSpec.describe Resource do
   subject { resource }
 
-  let(:resource) { build(:resource, :image, title: "Mona Lisa", identifier: "abc123", source_uri: source_uri) }
+  let(:resource) { build(:resource, :image, name: "Mona Lisa", identifier: "abc123", source_uri: source_uri) }
   let(:source_uri) { "http://example.com/100.jpg" }
 
   it { is_expected.to validate_presence_of(:resource_type) }
@@ -105,15 +105,15 @@ RSpec.describe Resource do
   end
 
   describe "when saved" do
-    it "sets a unique identifier based on the title" do
-      resource = build(:resource, identifier: "", title: "This is a test, isn't it?! YES!")
+    it "sets a unique identifier based on the name" do
+      resource = build(:resource, identifier: "", name: "This is a test, isn't it?! YES!")
       expect(resource.identifier).to be_blank
       resource.save!
       expect(resource.identifier).to eq("this-is-a-test-isn-t-it-yes")
 
       allow(SecureRandom).to receive(:hex).with(3).and_return("abcdef")
 
-      resource_2 = create(:resource, identifier: "", title: "This is a test, isn't it?! YES!")
+      resource_2 = create(:resource, identifier: "", name: "This is a test, isn't it?! YES!")
       expect(resource_2.identifier).to eq("this-is-a-test-isn-t-it-yes-abcdef")
       expect(SecureRandom).to have_received(:hex).with(3)
     end
@@ -199,7 +199,7 @@ RSpec.describe Resource do
       end
 
       it "accepts a metum by name" do
-        representation_attributes[:metum] = metum_2.title
+        representation_attributes[:metum] = metum_2.name
         expect(representation.metum).to eq(metum_2)
       end
 

@@ -28,7 +28,7 @@ table
         td= language
         td= status
         td= ordinality
-        td= Metum.find_by(id: metum_id)&.title
+        td= Metum.find_by(id: metum_id)&.name
         td= License.find_by(id: license_id)&.name
         td= content_uri
         td= notes

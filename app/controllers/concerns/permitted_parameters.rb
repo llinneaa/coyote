@@ -23,13 +23,13 @@ module PermittedParameters
       canonical_id
       host_uris
       identifier
+      name
       ordinality
       priority_flag
       resource_group_id
       resource_group_ids
       resource_type
       source_uri
-      title
       uploaded_resource
     ] + [{
       representations:    REPRESENTATION_PARAMS,

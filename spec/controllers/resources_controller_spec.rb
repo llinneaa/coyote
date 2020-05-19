@@ -6,7 +6,7 @@
 #
 #  id                    :bigint           not null, primary key
 #  identifier            :string           not null
-#  title                 :string           default("(no title provided)"), not null
+#  name                 :string           default("(no name provided)"), not null
 #  resource_type         :enum             not null
 #  canonical_id          :string           not null
 #  source_uri            :citext
@@ -48,7 +48,7 @@ RSpec.describe ResourcesController do
   end
 
   let(:update_resource_params) do
-    resource_params.merge(resource: {title: "NEWTITLE"})
+    resource_params.merge(resource: {name: "NEWNAME"})
   end
 
   describe "as a signed-out user" do
@@ -143,7 +143,7 @@ RSpec.describe ResourcesController do
         patch :update, params: update_resource_params
         expect(response).to redirect_to(resource)
         resource.reload
-      }.to change(resource, :title).to("NEWTITLE")
+      }.to change(resource, :name).to("NEWNAME")
 
       post :update, params: update_resource_params.merge(resource: {resource_type: ""})
       expect(response).not_to be_redirect

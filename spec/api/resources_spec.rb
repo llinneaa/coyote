@@ -24,45 +24,45 @@ RSpec.describe "Accessing resources" do
         .from(0).to(1)
 
       new_resource = user_organization.resources.first.tap do |resource|
-        expect(resource.title).to eq("Mona Lisa")
-        expect(resource.resource_group_title).to eq("website")
+        expect(resource.name).to eq("Mona Lisa")
+        expect(resource.resource_group_name).to eq("website")
       end
 
-      invalid_params = {resource: new_resource_params.except(:title).merge(canonical_id: "rewriting-canonical-id-for-test-reasons")}
+      invalid_params = {resource: new_resource_params.except(:name).merge(canonical_id: "rewriting-canonical-id-for-test-reasons")}
       post api_resources_path, params: invalid_params, headers: auth_headers
       expect(response).to be_unprocessable
       expect(json_data).to have_key(:errors)
 
-      update_params = {resource: new_resource_params.merge(canonical_id: new_resource.canonical_id, title: "This is the new title; it should update the old resource")}
+      update_params = {resource: new_resource_params.merge(canonical_id: new_resource.canonical_id, name: "This is the new name; it should update the old resource")}
       post api_resources_path, params: update_params, headers: auth_headers
       new_resource.reload
-      expect(new_resource.title).to eq("This is the new title; it should update the old resource")
-      expect(new_resource.resource_group_title).to eq("website")
+      expect(new_resource.name).to eq("This is the new name; it should update the old resource")
+      expect(new_resource.resource_group_name).to eq("website")
     end
 
-    it "POST /organizations/:id/resources without a title" do
+    it "POST /organizations/:id/resources without a name" do
       expect {
-        post api_resources_path(user_organization.id), params: {resource: new_resource_params.except(:title)}, headers: auth_headers
+        post api_resources_path(user_organization.id), params: {resource: new_resource_params.except(:name)}, headers: auth_headers
         expect(response).to be_created
       }.to change(user_organization.resources, :count)
         .from(0).to(1)
 
       user_organization.resources.first.tap do |resource|
-        expect(resource.title).to eq(Resource::DEFAULT_TITLE)
-        expect(resource.resource_group_title).to eq("website")
+        expect(resource.name).to eq(Resource::DEFAULT_NAME)
+        expect(resource.resource_group_name).to eq("website")
       end
     end
 
     it "PATCH /resources/:id" do
       expect {
-        patch api_resource_path(existing_resource.canonical_id), params: {resource: {title: "NEWTITLE"}}, headers: auth_headers
+        patch api_resource_path(existing_resource.canonical_id), params: {resource: {name: "NEWNAME"}}, headers: auth_headers
         expect(response).to be_successful
 
         existing_resource.reload
-      }.to change(existing_resource, :title)
-        .to("NEWTITLE")
+      }.to change(existing_resource, :name)
+        .to("NEWNAME")
 
-      patch api_resource_path(existing_resource.canonical_id), params: {resource: {title: nil}}, headers: auth_headers
+      patch api_resource_path(existing_resource.canonical_id), params: {resource: {name: nil}}, headers: auth_headers
       expect(response).to be_unprocessable
       expect(json_data).to have_key(:errors)
     end
@@ -111,7 +111,7 @@ RSpec.describe "Accessing resources" do
 
       let(:new_nested_resource_params) {
         attributes_for(:resource, representations: [
-          attributes_for(:representation).merge(metum: long.title),
+          attributes_for(:representation).merge(metum: long.name),
         ], resource_group_id: resource_group.id, source_uri: Faker::Internet.unique.url)
       }
 
@@ -123,7 +123,7 @@ RSpec.describe "Accessing resources" do
 
       let(:existing_nested_resource_params) {
         existing_nested_resource.attributes.slice("source_uri").merge(
-          representations: [representation_attributes.merge(metum: short.title)],
+          representations: [representation_attributes.merge(metum: short.name)],
         )
       }
 
@@ -153,9 +153,9 @@ RSpec.describe "Accessing resources" do
         expect(representation.metum).to eq(long) # It should not have updated the metum to short
       end
 
-      fit "POST /organizations/:id/resources/create returns a mix of errors and success when some things fail" do
+      it "POST /organizations/:id/resources/create returns a mix of errors and success when some things fail" do
         params = {resources: [
-          new_resource_params.except(:source_uri, :title, :identifier),
+          new_resource_params.except(:source_uri, :name, :identifier),
           existing_resource_params,
         ]}
 
@@ -165,8 +165,8 @@ RSpec.describe "Accessing resources" do
         }.not_to change(user_organization.resources, :count)
           .from(2)
 
-        pp json_data
-        # binding.pry
+        # pp json_data
+        # # binding.pry
         # It should add a new representation to the resource that had none
         # representation = existing_resource.representations.first
         # expect(representation.metum).to eq(short)
@@ -205,20 +205,20 @@ RSpec.describe "Accessing resources" do
     end
 
     let!(:older_resource) do
-      create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url, title: "This should be filtered out using the updated_at_gt filter").tap do |resource|
+      create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url, name: "This should be filtered out using the updated_at_gt filter").tap do |resource|
         resource.update_attribute(:updated_at, 10.days.ago)
       end
     end
 
     let!(:approved_resource) do
-      create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url, title: "This should be the only response using the with_approved_representations filter").tap do |resource|
+      create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url, name: "This should be the only response using the with_approved_representations filter").tap do |resource|
         create(:representation, resource: resource, status: "approved")
       end
     end
 
     before do
       create(:representation, resource: represented_resource, text: 'can search for the term "polyphonic"')
-      create(:resource, source_uri: Faker::Internet.unique.url, title: "Current user should not be seeing this due to other org privacy restrictions")
+      create(:resource, source_uri: Faker::Internet.unique.url, name: "Current user should not be seeing this due to other org privacy restrictions")
     end
 
     it "GET /organizations/:id/resources" do
@@ -251,7 +251,7 @@ RSpec.describe "Accessing resources" do
         expect(actual_path).to eq(path), "Expected '#{name}' link to match '#{path}' but got '#{actual_path}'"
       end
 
-      filter = {identifier_or_title_or_representations_text_cont_all: "polyphonic"}
+      filter = {identifier_or_name_or_representations_text_cont_all: "polyphonic"}
 
       request_path = api_resources_path(user_organization, filter: filter)
       get request_path, headers: auth_headers

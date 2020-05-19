@@ -7,12 +7,12 @@
 #  id                    :bigint           not null, primary key
 #  host_uris             :string           default([]), not null, is an Array
 #  identifier            :string           not null
+#  name                  :string           default("(no title provided)"), not null
 #  ordinality            :integer
 #  priority_flag         :boolean          default(FALSE), not null
 #  representations_count :integer          default(0), not null
 #  resource_type         :enum             not null
 #  source_uri            :citext
-#  title                 :string           default("(no title provided)"), not null
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
 #  canonical_id          :string           not null
@@ -34,9 +34,9 @@
 
 FactoryBot.define do
   factory :resource, aliases: %i[subject_resource object_resource] do
-    title { "Mona Lisa" }
+    name { "Mona Lisa" }
     resource_type { "still_image" }
-    identifier { "#{title.underscore.gsub(/\s+/, "_")}_#{SecureRandom.hex(2)}" }
+    identifier { "#{name.underscore.gsub(/\s+/, "_")}_#{SecureRandom.hex(2)}" }
 
     trait :priority do
       priority_flag { true }

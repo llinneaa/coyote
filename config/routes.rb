@@ -3,7 +3,7 @@
 # == Route Map
 #
 #                                     Prefix Verb   URI Pattern                                                                              Controller#Action
-#                  create_many_api_resources POST   /api/v1/organizations/:organization_id/resources/create_many(.:format)                   api/resources#create_many
+#                  create_many_api_resources POST   /api/v1/organizations/:organization_id/resources/create(.:format)                        api/resources#create_many
 #                          get_api_resources POST   /api/v1/organizations/:organization_id/resources/get(.:format)                           api/resources#index
 #                              api_resources GET    /api/v1/organizations/:organization_id/resources(.:format)                               api/resources#index
 #                                            POST   /api/v1/organizations/:organization_id/resources(.:format)                               api/resources#create

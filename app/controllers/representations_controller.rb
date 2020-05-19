@@ -78,7 +78,14 @@ class RepresentationsController < ApplicationController
   end
 
   def filter_params
-    params.fetch(:q, {}).permit(:s, :text_or_resource_identifier_or_resource_title_cont_all, :author_id_eq, status_in: [], metum_id_in: [])
+    params.fetch(:q, {}).permit(
+      :scope,
+      :text_or_resource_identifier_or_resource_name_cont_all,
+      :author_id_eq,
+      scope:       [],
+      status_in:   [],
+      metum_id_in: [],
+    )
   end
 
   def record_filter

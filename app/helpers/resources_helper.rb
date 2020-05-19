@@ -20,7 +20,7 @@ module ResourcesHelper
     else
       current_user.resource_groups
     end.by_default_and_name.map do |c|
-      [c.title_with_default_annotation, c.id]
+      [c.name_with_default_annotation, c.id]
     end
   end
 
@@ -41,7 +41,7 @@ module ResourcesHelper
     if resource.viewable?
       image_tag(resource_content_uri(resource), options)
     else
-      "#{resource.title} (#{resource.resource_type})"
+      "#{resource.name} (#{resource.resource_type})"
     end
   end
 

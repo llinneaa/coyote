@@ -37,7 +37,7 @@ class ResourcesController < ApplicationController
 
   def new
     self.resource = current_organization.resources.new(
-      title:           "",
+      name:            "",
       resource_groups: current_organization.resource_groups.default.to_a,
     )
   end
@@ -74,8 +74,8 @@ class ResourcesController < ApplicationController
 
   def filter_params
     params.fetch(:q, {}).permit(
-      :s,
-      :canonical_id_or_identifier_or_title_or_representations_text_cont_all,
+      :scope,
+      :canonical_id_or_identifier_or_name_or_representations_text_cont_all,
       :representations_author_id_eq,
       :assignments_user_id_eq,
       :priority_flag_eq,

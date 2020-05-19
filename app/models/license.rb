@@ -4,12 +4,12 @@
 #
 # Table name: licenses
 #
-#  id         :bigint           not null, primary key
-#  name       :string           not null
-#  title      :string           not null
-#  url        :string           not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+#  id          :bigint           not null, primary key
+#  description :string           not null
+#  name        :string           not null
+#  url         :string           not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
 #
 
 # Represents licenses recognized by Coyote
