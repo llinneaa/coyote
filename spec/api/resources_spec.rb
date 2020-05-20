@@ -304,7 +304,7 @@ RSpec.describe "Accessing resources" do
     include_context "API author user"
 
     let(:resource) do
-      create(:resource, organization: user_organization)
+      create(:resource, canonical_id: "abc123", organization: user_organization)
     end
 
     it "GET /resources/:id" do
