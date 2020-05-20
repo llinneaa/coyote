@@ -13,7 +13,7 @@ RSpec.describe "Accessing resources" do
     end
 
     let(:existing_resource) do
-      create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url)
+      create(:resource, organization: user_organization)
     end
 
     it "POST /organizations/:id/resources" do
@@ -28,12 +28,13 @@ RSpec.describe "Accessing resources" do
         expect(resource.resource_group_name).to eq("website")
       end
 
-      invalid_params = {resource: new_resource_params.except(:name).merge(canonical_id: "rewriting-canonical-id-for-test-reasons")}
+      # An explicitly name will cause a rejection
+      invalid_params = {resource: new_resource_params.merge(canonical_id: "rewriting-canonical-id-for-test-reasons", name: "")}
       post api_resources_path, params: invalid_params, headers: auth_headers
       expect(response).to be_unprocessable
       expect(json_data).to have_key(:errors)
 
-      update_params = {resource: new_resource_params.merge(canonical_id: new_resource.canonical_id, name: "This is the new name; it should update the old resource")}
+      update_params = {resource: new_resource_params.merge(name: "This is the new name; it should update the old resource")}
       post api_resources_path, params: update_params, headers: auth_headers
       new_resource.reload
       expect(new_resource.name).to eq("This is the new name; it should update the old resource")
@@ -55,14 +56,14 @@ RSpec.describe "Accessing resources" do
 
     it "PATCH /resources/:id" do
       expect {
-        patch api_resource_path(existing_resource.canonical_id), params: {resource: {name: "NEWNAME"}}, headers: auth_headers
+        patch api_resource_path(existing_resource.id), params: {resource: {name: "NEWNAME"}}, headers: auth_headers
         expect(response).to be_successful
 
         existing_resource.reload
       }.to change(existing_resource, :name)
         .to("NEWNAME")
 
-      patch api_resource_path(existing_resource.canonical_id), params: {resource: {name: nil}}, headers: auth_headers
+      patch api_resource_path(existing_resource.id), params: {resource: {name: nil}}, headers: auth_headers
       expect(response).to be_unprocessable
       expect(json_data).to have_key(:errors)
     end
@@ -79,7 +80,7 @@ RSpec.describe "Accessing resources" do
       }
 
       expect {
-        patch api_resource_path(existing_resource.canonical_id), params: params, headers: auth_headers
+        patch api_resource_path(existing_resource.id), params: params, headers: auth_headers
         expect(response).to be_successful
 
         existing_resource.reload
@@ -93,26 +94,26 @@ RSpec.describe "Accessing resources" do
 
     describe "creating many resources" do
       let!(:license) { create(:license, :universal) }
-      let!(:short) { create(:metum, :short) }
-      let!(:long) { create(:metum, :long) }
+      let!(:short) { create(:metum, :short, organization: user_organization) }
+      let!(:long) { create(:metum, :long, organization: user_organization) }
 
       let(:representation_attributes) { attributes_for(:representation) }
 
-      let!(:existing_resource) { create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url) }
+      let!(:existing_resource) { create(:resource, organization: user_organization) }
       let!(:existing_nested_resource) {
-        create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url).tap do |resource|
+        create(:resource, organization: user_organization).tap do |resource|
           create(:representation, representation_attributes.merge(metum: long, resource: resource))
         end
       }
 
       let(:new_resource_params) do
-        attributes_for(:resource, resource_group_id: resource_group.id, source_uri: Faker::Internet.unique.url)
+        attributes_for(:resource, resource_group_id: resource_group.id)
       end
 
       let(:new_nested_resource_params) {
         attributes_for(:resource, representations: [
           attributes_for(:representation).merge(metum: long.name),
-        ], resource_group_id: resource_group.id, source_uri: Faker::Internet.unique.url)
+        ], resource_group_id: resource_group.id)
       }
 
       let(:existing_resource_params) {
@@ -128,13 +129,15 @@ RSpec.describe "Accessing resources" do
       }
 
       it "POST /organizations/:id/resources/create creates new resources by source_uri, and appends representations" do
+        params = {resources: [
+          new_resource_params,
+          new_nested_resource_params,
+          existing_resource_params,
+          existing_nested_resource_params,
+        ]}
+
         expect {
-          post create_many_api_resources_path(user_organization.id), params: {resources: [
-            new_resource_params,
-            new_nested_resource_params,
-            existing_resource_params,
-            existing_nested_resource_params,
-          ]}, headers: auth_headers
+          post create_many_api_resources_path(user_organization.id), params: params, as: :json, headers: auth_headers
           expect(response).to be_created
         }.to change(user_organization.resources, :count)
           .from(2).to(4)
@@ -153,9 +156,9 @@ RSpec.describe "Accessing resources" do
         expect(representation.metum).to eq(long) # It should not have updated the metum to short
       end
 
-      it "POST /organizations/:id/resources/create returns a mix of errors and success when some things fail" do
+      fit "POST /organizations/:id/resources/create returns a mix of errors and success when some things fail" do
         params = {resources: [
-          new_resource_params.except(:source_uri, :name, :identifier),
+          new_resource_params.except(:source_uri, :name),
           existing_resource_params,
         ]}
 
@@ -195,9 +198,7 @@ RSpec.describe "Accessing resources" do
     end
 
     let!(:user_org_resources) do
-      create_list(:resource, user_org_resource_count, organization: user_organization, priority_flag: true) do |resource|
-        resource.source_uri = Faker::Internet.unique.url
-      end
+      create_list(:resource, user_org_resource_count, organization: user_organization, priority_flag: true)
     end
 
     let(:represented_resource) do
@@ -205,20 +206,20 @@ RSpec.describe "Accessing resources" do
     end
 
     let!(:older_resource) do
-      create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url, name: "This should be filtered out using the updated_at_gt filter").tap do |resource|
+      create(:resource, organization: user_organization, name: "This should be filtered out using the updated_at_gt filter").tap do |resource|
         resource.update_attribute(:updated_at, 10.days.ago)
       end
     end
 
     let!(:approved_resource) do
-      create(:resource, organization: user_organization, source_uri: Faker::Internet.unique.url, name: "This should be the only response using the with_approved_representations filter").tap do |resource|
+      create(:resource, organization: user_organization, name: "This should be the only response using the with_approved_representations filter").tap do |resource|
         create(:representation, resource: resource, status: "approved")
       end
     end
 
     before do
       create(:representation, resource: represented_resource, text: 'can search for the term "polyphonic"')
-      create(:resource, source_uri: Faker::Internet.unique.url, name: "Current user should not be seeing this due to other org privacy restrictions")
+      create(:resource, name: "Current user should not be seeing this due to other org privacy restrictions")
     end
 
     it "GET /organizations/:id/resources" do
@@ -251,7 +252,7 @@ RSpec.describe "Accessing resources" do
         expect(actual_path).to eq(path), "Expected '#{name}' link to match '#{path}' but got '#{actual_path}'"
       end
 
-      filter = {identifier_or_name_or_representations_text_cont_all: "polyphonic"}
+      filter = {canonical_id_or_name_or_representations_text_cont_all: "polyphonic"}
 
       request_path = api_resources_path(user_organization, filter: filter)
       get request_path, headers: auth_headers
@@ -309,7 +310,7 @@ RSpec.describe "Accessing resources" do
     end
 
     it "GET /resources/:id" do
-      get api_resource_path(resource.identifier), headers: auth_headers
+      get api_resource_path(resource.id), headers: auth_headers
       expect(response).to be_successful
 
       json_data.fetch(:data).tap do |data|
@@ -317,15 +318,14 @@ RSpec.describe "Accessing resources" do
         expect(data).to have_type("resource")
 
         expect(data).to have_attribute(:resource_type).with_value(resource.resource_type)
-        expect(data).to have_attribute(:canonical_id).with_value(resource.canonical_id)
         expect(data).to have_attribute(:canonical_id).with_value(resource.canonical_id)
 
         expect(data).to have_relationships(:organization, :representations)
       end
     end
 
-    it "GET /resources/:id with canonical ID" do
-      get api_resource_path(resource.canonical_id), headers: auth_headers
+    it "GET /resources/canonical/:id with canonical ID" do
+      get api_canonical_resource_path(resource.canonical_id), headers: auth_headers
       expect(response).to be_successful
 
       json_data.fetch(:data).tap do |data|
@@ -333,7 +333,6 @@ RSpec.describe "Accessing resources" do
         expect(data).to have_type("resource")
 
         expect(data).to have_attribute(:resource_type).with_value(resource.resource_type)
-        expect(data).to have_attribute(:canonical_id).with_value(resource.canonical_id)
         expect(data).to have_attribute(:canonical_id).with_value(resource.canonical_id)
 
         expect(data).to have_relationships(:organization, :representations)

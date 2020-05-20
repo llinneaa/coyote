@@ -9,8 +9,10 @@
 #                                            POST   /api/v1/organizations/:organization_id/resources(.:format)                               api/resources#create
 #                        api_resource_groups GET    /api/v1/organizations/:organization_id/resource_groups(.:format)                         api/resource_groups#index
 #                                            POST   /api/v1/organizations/:organization_id/resource_groups(.:format)                         api/resource_groups#create
-#                        api_representations GET    /api/v1/resources/:resource_identifier/representations(.:format)                         api/representations#index
-#                                            POST   /api/v1/resources/:resource_identifier/representations(.:format)                         api/representations#create
+#                        api_representations GET    /api/v1/resources/canonical/:canonical_id/representations(.:format)                      api/representations#index
+#                                            POST   /api/v1/resources/canonical/:canonical_id/representations(.:format)                      api/representations#create
+#                                            GET    /api/v1/resources/:resource_id/representations(.:format)                                 api/representations#index
+#                                            POST   /api/v1/resources/:resource_id/representations(.:format)                                 api/representations#create
 #                               api_resource GET    /api/v1/resources/:id(.:format)                                                          api/resources#show
 #                                            PATCH  /api/v1/resources/:id(.:format)                                                          api/resources#update
 #                                            PUT    /api/v1/resources/:id(.:format)                                                          api/resources#update
@@ -139,10 +141,15 @@ Rails.application.routes.draw do
         resources :resource_groups, only: %i[index create]
       end
 
-      scope "resources/:resource_identifier" do
+      scope "resources/:resource_id" do
         resources :representations, only: %i[index create]
       end
 
+      scope "resources/canonical/:canonical_id" do
+        resources :representations, as: :canonical_representations, only: %i[index create]
+      end
+
+      resources :resources, as: :canonical_resources, path: "resources/canonical", only: %i[show update], param: :canonical_id
       resources :resources, only: %i[show update]
       resources :resource_groups, only: %i[destroy show update]
       resources :representations, only: %i[show update destroy]

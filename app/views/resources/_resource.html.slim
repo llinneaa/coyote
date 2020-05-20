@@ -1,10 +1,10 @@
 - form ||=nil
-- id = id_for(resource.identifier)
+- id = id_for(resource)
 li.list-item.list-item--card
-  h4.sr-only id="resource-#{id}" Resource #{resource.identifier}
+  h4.sr-only id=id Resource #{resource.name}
   - if form.present? && policy(Assignment).new?
     label.list-item-header
-      = check_box_tag "assignment[resource_ids][]", resource.id, nil, aria: { label: "Select resource '#{resource.identifier}' for bulk assignment'" }
+      = check_box_tag "assignment[resource_ids][]", resource.id, nil, aria: { label: "Select resource '#{resource.name}' for bulk assignment'" }
       = resource_link(resource)
   - else
     .list-item-header

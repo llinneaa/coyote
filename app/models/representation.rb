@@ -53,11 +53,11 @@ class Representation < ApplicationRecord
   delegate :name, to: :metum, prefix: true
   delegate :description, :name, to: :license, prefix: true
   delegate :name, to: :author, prefix: true
-  delegate :identifier, to: :resource, prefix: true
 
   scope :by_ordinality, -> { order(ordinality: :asc) }
   scope :by_status, ->(descending: false) { order(Arel.sql("(case status when 'approved' then 0 when 'ready_to_review' then 1 else 2 end) #{descending ? "DESC" : "ASC"}")) }
   scope :by_length, -> { order(Arel.sql("length(text) DESC")) }
+  scope :with_metum, ->(metum_id) { where(metum_id: metum_id) }
   scope :with_metum_named, ->(name) { joins(:metum).where(meta: {name: name}) }
 
   audited
@@ -68,6 +68,22 @@ class Representation < ApplicationRecord
   # @see https://github.com/activerecord-hackery/ransack#using-scopesclass-methods
   def self.ransackable_scopes(_ = nil)
     %i[approved by_ordinality not_approved ready_to_review]
+  end
+
+  def select_default_license(attributes)
+    name = attributes.delete(:license)
+    self.license_id = attributes.delete(:license_id) ||
+      (name.present? && License.where(name: name).first_id) ||
+      license_id ||
+      License.is_default.first_id
+  end
+
+  def select_default_metum(attributes, meta)
+    name = attributes.delete(:metum)
+    self.metum_id = attributes.delete(:metum_id) ||
+      (name.present? && meta.where(name: name).first_id) ||
+      metum_id ||
+      meta.where(name: "Short").first_id
   end
 
   def to_s

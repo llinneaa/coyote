@@ -6,20 +6,18 @@
 #
 #  id                    :bigint           not null, primary key
 #  host_uris             :string           default([]), not null, is an Array
-#  identifier            :string           not null
 #  name                  :string           default("(no title provided)"), not null
 #  priority_flag         :boolean          default(FALSE), not null
 #  representations_count :integer          default(0), not null
 #  resource_type         :enum             not null
-#  source_uri            :citext
+#  source_uri            :citext           not null
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
-#  canonical_id          :string           not null
+#  canonical_id          :citext
 #  organization_id       :bigint           not null
 #
 # Indexes
 #
-#  index_resources_on_identifier                        (identifier) UNIQUE
 #  index_resources_on_organization_id                   (organization_id)
 #  index_resources_on_organization_id_and_canonical_id  (organization_id,canonical_id) UNIQUE
 #  index_resources_on_priority_flag                     (priority_flag)
@@ -37,12 +35,10 @@ require "webmock/rspec"
 RSpec.describe Resource do
   subject { resource }
 
-  let(:resource) { build(:resource, :image, name: "Mona Lisa", identifier: "abc123", source_uri: source_uri) }
+  let(:resource) { build(:resource, :image, canonical_id: "abc123", name: "Mona Lisa", source_uri: source_uri) }
   let(:source_uri) { "http://example.com/100.jpg" }
 
   it { is_expected.to validate_presence_of(:resource_type) }
-
-  it { is_expected.to validate_uniqueness_of(:identifier) }
 
   specify { expect(resource.label).to eq("Mona Lisa (abc123)") }
 
@@ -104,19 +100,6 @@ RSpec.describe Resource do
   end
 
   describe "when saved" do
-    it "sets a unique identifier based on the name" do
-      resource = build(:resource, identifier: "", name: "This is a test, isn't it?! YES!")
-      expect(resource.identifier).to be_blank
-      resource.save!
-      expect(resource.identifier).to eq("this-is-a-test-isn-t-it-yes")
-
-      allow(SecureRandom).to receive(:hex).with(3).and_return("abcdef")
-
-      resource_2 = create(:resource, identifier: "", name: "This is a test, isn't it?! YES!")
-      expect(resource_2.identifier).to eq("this-is-a-test-isn-t-it-yes-abcdef")
-      expect(SecureRandom).to have_received(:hex).with(3)
-    end
-
     it "sets a unique canonical id" do
       resource = build(:resource)
       expect(resource.canonical_id).to be_blank
@@ -152,8 +135,8 @@ RSpec.describe Resource do
     let!(:license) { create(:license, :universal) }
     let!(:license_2) { create(:license, :attribution_international) }
 
-    let!(:metum) { create(:metum, :short) }
-    let!(:metum_2) { create(:metum, :long) }
+    let!(:metum) { create(:metum, :short, organization: organization) }
+    let!(:metum_2) { create(:metum, :long, organization: organization) }
 
     let(:representation_attributes) { attributes_for(:representation) }
 
@@ -161,7 +144,7 @@ RSpec.describe Resource do
       let(:resource) {
         create(:resource,
           organization:               organization,
-          representations_attributes: {0 => representation_attributes})
+          representations_attributes: [representation_attributes])
       }
       let(:representation) { resource.representations.first }
 

@@ -23,7 +23,6 @@ module Api
 
     def_param_group :resource do
       param :resource, Hash, action_aware: true do
-        param :identifier, String, "Unique human-readable identifier (slug) for this resource", required: false
         param :name, String, "Caption that helps humans identify the resource", required: true
         param :resource_type, Coyote::Resource::TYPES.values, "Dublin Core Metadata type for this resource", required: true
         param :canonical_id, String, "Unique identifier assigned by the organization that owns this resource", required: false
@@ -48,7 +47,7 @@ module Api
     api :GET, "resources", "Return a list of resources available to the authenticated user"
     param_group :pagination, Api::ApplicationController
     param :filter, Hash do
-      param :identifier_or_name_or_representations_text_cont_all, String, "Search Resource identifier, name, or associated Representation text for this value"
+      param :canonical_id_or_name_or_representations_text_cont_all, String, "Search Resource canonical ID, name, or associated Representation text for this value"
       param :representations_updated_at_gt, Date, "Filter returned resources to those with representations having an `updated_at` value after the given date"
       param :updated_at_gt, Date, "Filter returned resources to those whose `updated_at` value is after the given date"
       param :scope, Resource.ransackable_scopes.to_a, "Limit search to Resources in these states"
@@ -156,8 +155,7 @@ module Api
       TEST
     EXAMPLE
     def create
-      resource = current_organization.resources.find_or_initialize_by(canonical_id: resource_params[:canonical_id])
-
+      resource = resource_for(resource_params)
       if resource.update(resource_params)
         logger.info "Created #{resource}"
         render jsonapi: resource, status: :created, links: {
@@ -169,18 +167,15 @@ module Api
       end
     end
 
-    api :POST, "resources/create_many", "Bulk 'upsert' resources by source_uri"
+    api :POST, "resources/create", "Bulk 'upsert' resources by source_uri"
     def create_many
+      pp params.to_unsafe_h
       resources = params.require(:resources).map { |resource_params|
         resource_params = clean_resource_params(resource_params)
-        resource = if resource_params[:source_uri].present?
-          current_organization.resources.find_or_initialize_by(source_uri: resource_params[:source_uri])
-        elsif resource_params[:identifier].present?
-          current_organization.resources.find_or_initialize_by(identifier: resource_params[:identifier])
-        else
-          current_organization.resources.build
-        end
+        resource = resource_for(resource_params)
         resource.update(resource_params)
+        pp resource.errors.to_hash
+        binding.pry
         resource
       }
 
@@ -317,18 +312,24 @@ module Api
     end
 
     def filter_params
-      params.fetch(:filter, {}).permit(
-        :identifier_or_name_or_representations_text_cont_all,
-        :representations_updated_at_gt,
-        :updated_at_gt,
-        :source_uri_eq_any,
-        :scope,
-        scope: [],
-      )
+      params.fetch(:filter, {}).permit(*RESOURCE_FILTERS)
     end
 
     def record_filter
-      @record_filter ||= RecordFilter.new(filter_params, pagination_params, current_user.resources, default_order: :order_by_priority_and_date)
+      @record_filter ||= RecordFilter.new(
+        filter_params,
+        pagination_params,
+        (current_organization || current_user).resources,
+        default_order: :order_by_priority_and_date,
+      )
+    end
+
+    def resource_for(resource_params)
+      scope = current_organization.resources
+      resource = resource_params[:canonical_id].present? && scope.find_by(canonical_id: resource_params[:canonical_id])
+      resource ||= scope.find_by(source_uri: resource_params[:source_uri])
+      resource ||= scope.build
+      resource
     end
   end
 end

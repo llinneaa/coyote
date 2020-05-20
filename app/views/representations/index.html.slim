@@ -7,7 +7,7 @@
       label.filter-set-item.field.field--accessory
         span.sr-only Search by caption or description
         = icon :magnifier, class: 'field-accessory'
-        = f.search_field :text_or_resource_identifier_or_resource_name_cont_all, required: false, placeholder: 'Search representation text'
+        = f.search_field :text_or_resource_canonical_id_or_resource_name_cont_all, required: false, placeholder: 'Search representation text'
 
       .filter-set-item
         .filter-set-item-title Status

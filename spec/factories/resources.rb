@@ -6,20 +6,18 @@
 #
 #  id                    :bigint           not null, primary key
 #  host_uris             :string           default([]), not null, is an Array
-#  identifier            :string           not null
 #  name                  :string           default("(no title provided)"), not null
 #  priority_flag         :boolean          default(FALSE), not null
 #  representations_count :integer          default(0), not null
 #  resource_type         :enum             not null
-#  source_uri            :citext
+#  source_uri            :citext           not null
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
-#  canonical_id          :string           not null
+#  canonical_id          :citext
 #  organization_id       :bigint           not null
 #
 # Indexes
 #
-#  index_resources_on_identifier                        (identifier) UNIQUE
 #  index_resources_on_organization_id                   (organization_id)
 #  index_resources_on_organization_id_and_canonical_id  (organization_id,canonical_id) UNIQUE
 #  index_resources_on_priority_flag                     (priority_flag)
@@ -35,7 +33,7 @@ FactoryBot.define do
   factory :resource, aliases: %i[subject_resource object_resource] do
     name { "Mona Lisa" }
     resource_type { "still_image" }
-    identifier { "#{name.underscore.gsub(/\s+/, "_")}_#{SecureRandom.hex(2)}" }
+    source_uri { Faker::Internet.unique.url }
 
     trait :priority do
       priority_flag { true }

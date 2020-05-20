@@ -6,7 +6,7 @@ RSpec.describe "Resource adding and changing" do
   let!(:resource_group) { create(:resource_group, organization: user_organization) }
 
   let(:resource_attributes) do
-    attributes_for(:resource).tap(&:symbolize_keys!)
+    attributes_for(:resource, canonical_id: "abc123").symbolize_keys
   end
 
   it "succeeds" do
@@ -15,7 +15,6 @@ RSpec.describe "Resource adding and changing" do
 
     select(resource_group.name, from: "Resource Group", match: :first)
 
-    fill_in "Identifier", with: resource_attributes[:identifier]
     fill_in "Caption", with: resource_attributes[:name]
     fill_in "Canonical ID", with: resource_attributes[:canonical_id]
     fill_in "Host URIs", with: "http://example.com/abc\nhttp://example.com/xyz"
@@ -27,7 +26,7 @@ RSpec.describe "Resource adding and changing" do
     }.to change(Resource, :count)
       .from(0).to(1)
 
-    resource = Resource.find_by!(identifier: resource_attributes[:identifier])
+    resource = Resource.find_by!(canonical_id: resource_attributes[:canonical_id])
     expect(resource.host_uris).to match_array(%w[http://example.com/abc http://example.com/xyz])
 
     expect(page).to have_current_path(resource_path(resource), ignore_query: true)

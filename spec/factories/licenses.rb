@@ -6,6 +6,7 @@
 #
 #  id          :bigint           not null, primary key
 #  description :string           not null
+#  is_default  :boolean          default(FALSE)
 #  name        :string           not null
 #  url         :string           not null
 #  created_at  :datetime         not null
@@ -21,6 +22,7 @@ FactoryBot.define do
     trait :universal do
       name { "cc0-1.0" }
       description { "Universal Public Domain Dedication" }
+      is_default { true }
       url { "https://creativecommons.org/publicdomain/zero/1.0/" }
     end
 

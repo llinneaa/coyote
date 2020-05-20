@@ -58,11 +58,7 @@ module Api
     end
 
     def filter_params
-      params.fetch(:filter, {}).permit(
-        :scope,
-        :updated_at_gt,
-        scope: [],
-      )
+      params.fetch(:filter, {}).permit(*REPRESENTATION_FILTERS)
     end
 
     def find_representation

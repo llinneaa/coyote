@@ -288,7 +288,8 @@ CREATE TABLE public.licenses (
     description character varying NOT NULL,
     url character varying NOT NULL,
     created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_default boolean DEFAULT false
 );
 
 
@@ -590,11 +591,10 @@ ALTER SEQUENCE public.resource_webhook_calls_id_seq OWNED BY public.resource_web
 
 CREATE TABLE public.resources (
     id bigint NOT NULL,
-    identifier character varying NOT NULL,
     name character varying DEFAULT '(no title provided)'::character varying NOT NULL,
     resource_type public.resource_type NOT NULL,
-    canonical_id character varying NOT NULL,
-    source_uri public.citext,
+    canonical_id public.citext,
+    source_uri public.citext NOT NULL,
     organization_id bigint NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
@@ -1513,13 +1513,6 @@ CREATE INDEX index_resource_webhook_calls_on_resource_id ON public.resource_webh
 
 
 --
--- Name: index_resources_on_identifier; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_resources_on_identifier ON public.resources USING btree (identifier);
-
-
---
 -- Name: index_resources_on_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1908,6 +1901,9 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20200501205106'),
 ('20200514191454'),
 ('20200519172348'),
-('20200519183148');
+('20200519183148'),
+('20200519184306'),
+('20200520195141'),
+('20200520204316');
 
 
