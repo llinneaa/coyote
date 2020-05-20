@@ -156,7 +156,7 @@ RSpec.describe "Accessing resources" do
         expect(representation.metum).to eq(long) # It should not have updated the metum to short
       end
 
-      fit "POST /organizations/:id/resources/create returns a mix of errors and success when some things fail" do
+      it "POST /organizations/:id/resources/create returns a mix of errors and success when some things fail" do
         params = {resources: [
           new_resource_params.except(:source_uri, :name),
           existing_resource_params,
@@ -168,20 +168,18 @@ RSpec.describe "Accessing resources" do
         }.not_to change(user_organization.resources, :count)
           .from(2)
 
-        # pp json_data
-        # # binding.pry
         # It should add a new representation to the resource that had none
-        # representation = existing_resource.representations.first
-        # expect(representation.metum).to eq(short)
-        # expect(representation.license).to eq(license)
-        # expect(representation.text).to eq(representation_attributes[:text])
+        representation = existing_resource.representations.first
+        expect(representation.metum).to eq(short)
+        expect(representation.license).to eq(license)
+        expect(representation.text).to eq(representation_attributes[:text])
 
-        # # It should prevent creation of a duplicate representation on the resource that already had one, and
-        # expect(existing_nested_resource.representations.count).to eq(1)
+        # It should prevent creation of a duplicate representation on the resource that already had one, and
+        expect(existing_nested_resource.representations.count).to eq(1)
 
-        # # It should also not modify the existing representation since it was a duplicate
-        # representation = existing_nested_resource.representations.first
-        # expect(representation.metum).to eq(long) # It should not have updated the metum to short
+        # It should also not modify the existing representation since it was a duplicate
+        representation = existing_nested_resource.representations.first
+        expect(representation.metum).to eq(long) # It should not have updated the metum to short
       end
     end
   end

@@ -70,7 +70,7 @@ class Resource < ApplicationRecord
   scope :with_approved_representations, -> { joins(:representations).where(representations: {status: Coyote::Representation::STATUSES[:approved]}) }
 
   validates :resource_type, presence: true
-  validates :canonical_id, uniqueness: {scope: :organization_id}
+  validates :canonical_id, uniqueness: {scope: :organization_id}, allow_blank: true
   validates :source_uri, presence: true, uniqueness: {scope: :organization_id}
   validates :name, presence: true
 

@@ -169,13 +169,10 @@ module Api
 
     api :POST, "resources/create", "Bulk 'upsert' resources by source_uri"
     def create_many
-      pp params.to_unsafe_h
       resources = params.require(:resources).map { |resource_params|
         resource_params = clean_resource_params(resource_params)
         resource = resource_for(resource_params)
         resource.update(resource_params)
-        pp resource.errors.to_hash
-        binding.pry
         resource
       }
 
